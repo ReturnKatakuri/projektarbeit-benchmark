@@ -1,0 +1,150 @@
+# docker-compose.yml
+# Messumgebung fuer den Performancevergleich:
+#   Arm A: PostgreSQL (Datenbank arm_a)
+#   Arm B + C: MongoDB (Datenbanken arm_b und arm_c)
+#
+# Starten:   docker compose up -d
+# Stoppen:   docker compose down
+# Zuruecksetzen (Daten loeschen):
+#   docker compose down --volumes
+#   -- oder einzeln:
+#   docker volume rm bachelor-benchmark_postgres_daten bachelor-benchmark_mongo_daten
+#   (Praefixname ergibt sich aus dem Verzeichnisnamen des Projekts;
+#    mit "docker volume ls" den genauen Namen bestaetigen)
+#
+# --------------------------------------------------------------------
+# Anpassbare Werte -- alle drei hier aendern, nicht weiter unten.
+# Beide Datenbanken bekommen zwingend denselben Wert je Einstellung.
+# --------------------------------------------------------------------
+#
+# SPEICHERLIMIT_JE_CONTAINER: 2g
+#   Faustformel: (Gesamt-RAM - 4 GB Betriebssystem) / Anzahl_Container
+#   Bei 32 GB und 2 Containern waere das (32-4)/2 = 14 GB.
+#   Hier bewusst 2 GB gewaehlt: beide Container zusammen = 4 GB,
+#   der Rest bleibt fuer den Dateisystem-Cache des Kernels und die
+#   Python-Skripte -- so verzerrt kein saturierter RAM das Ergebnis.
+#   Wert unveraendert in memory: unter beiden deploy-Bloecken.
+#
+# CPU_KERNE_JE_CONTAINER: "4"
+#   Maximale CPU-Zeit in Kernaequivalenten (Dezimalzahl als String).
+#   Faustformel: Anzahl logischer Kerne / 2, damit beide Container
+#   parallel laufen koennen, ohne sich gegenseitig zu verdraengen.
+#   Wert unveraendert in cpus: unter beiden deploy-Bloecken.
+#
+# PUFFERGROESSE: 1GB / 1
+#   shared_buffers (PostgreSQL) und --wiredTigerCacheSizeGB (MongoDB)
+#   muessen exakt gleich sein -- das ist die wichtigste Fairnessregel.
+#   Faustformel: 50 % des Speicherlimits des Containers.
+#   Bei Limit 2 g also 1 GB / 1.
+#   Achtung: PostgreSQL erwartet "1GB" (String), MongoDB "1" (Zahl).
+# --------------------------------------------------------------------
+
+services:
+
+  # ------------------------------------------------------------------
+  # Arm A: PostgreSQL, normalisiertes Modell
+  # ------------------------------------------------------------------
+  postgres:
+    image: postgres:17                # Fester Majorversions-Tag; nie "latest".
+                                      # Die Version wird in der Arbeit dokumentiert.
+                                      # Genauen Patch-Stand nach dem ersten Pull pruefen:
+                                      #   docker inspect arm_postgres | grep -i image
+                                      # Ergebnis als Kommentar hier eintragen.
+    container_name: arm_postgres      # Fester Name erleichtert psql-Direktzugriffe.
+    shm_size: 256mb                   # Gemeinsamer Speicher fuer PostgreSQL-interne
+                                      # Strukturen (Semaphoren, Prozesskommunikation).
+                                      # Dockers Standard-/dev/shm ist 64 MB; das
+                                      # offizielle postgres-Image dokumentiert, dass
+                                      # PostgreSQL damit bei grossem shared_buffers
+                                      # beim Start scheitern kann.
+
+    environment:
+      POSTGRES_PASSWORD: test         # Passwort des Superusers postgres.
+                                      # Identisch mit dem Wert in queries.py und load_data.py.
+      POSTGRES_DB: arm_a              # Datenbank, die beim ersten Start automatisch
+                                      # angelegt wird; Name aus queries.py uebernommen.
+
+    # PostgreSQL-Konfiguration wird direkt als Serverparameter uebergeben,
+    # weil kein eigenes postgresql.conf noetig ist.
+    # shared_buffers=1GB: dedizierter RAM fuer gecachte Datenbloecke.
+    #   Entspricht dem WiredTiger-Cache von MongoDB -- gleicher Wert Pflicht.
+    # synchronous_commit=on: Schreibbestaetigung erst nach dauerhafter
+    #   Sicherung auf Disk. Ist der PostgreSQL-Standard, hier explizit
+    #   gesetzt, weil MongoDB ebenfalls mit Journal-Bestaetigung laeuft.
+    command: >
+      postgres
+        -c shared_buffers=1GB
+        -c synchronous_commit=on
+
+    ports:
+      - "5432:5432"                   # Standardport; erreichbar vom Host fuer psql
+                                      # und die Python-Skripte.
+
+    volumes:
+      - postgres_daten:/var/lib/postgresql/data
+                                      # Named Volume: Daten ueberleben docker compose down.
+                                      # Nur docker compose down --volumes loescht sie.
+
+    # deploy.resources.limits funktioniert mit "docker compose" (Compose v2,
+    # die Go-Implementierung) ohne Swarm-Modus. Die aeltere Schreibweise
+    # "mem_limit:" / "cpus:" auf Service-Ebene ist seit Compose v2 deprecated.
+    # Wichtig: "docker compose" (mit Leerzeichen, v2) verwenden, nicht
+    # "docker-compose" (mit Bindestrich, v1); v1 ignoriert deploy-Limits
+    # ausserhalb von Swarm.
+    deploy:
+      resources:
+        limits:
+          memory: 2g                  # Hartes RAM-Limit. Bei Ueberschreitung beendet
+                                      # der Linux-Kernel den Prozess (OOM-Killer).
+          cpus: "4"                   # Maximale CPU-Zeit; 4 Kerne entsprechen 400 %
+                                      # Auslastungsanzeige in docker stats.
+
+    restart: "no"                     # Kein automatischer Neustart. Haengt ein Container,
+                                      # soll er sichtbar bleiben, nicht still neu starten
+                                      # und eine Messung verfaelschen.
+
+  # ------------------------------------------------------------------
+  # Arm B und C: MongoDB, referenziertes und eingebettetes Modell
+  # ------------------------------------------------------------------
+  mongodb:
+    # 8.2 statt 8.0: MongoDB 8.0 startet auf dem Kernel der Docker-VM nicht (SERVER-121912).
+    image: mongo:8.2                  # Fester Majorversions-Tag; nie "latest".
+                                      # Patch-Stand nach dem ersten Pull pruefen:
+                                      #   docker inspect arm_mongodb | grep -i image
+                                      # Ergebnis als Kommentar hier eintragen.
+    container_name: arm_mongodb       # Fester Name erleichtert mongosh-Direktzugriffe.
+
+    # --wiredTigerCacheSizeGB 1: interner Dokument-Cache von MongoDB.
+    # Exakt derselbe Wert wie shared_buffers in PostgreSQL (1 GB = 1).
+    # MongoDB berechnet den Cache-Standardwert aus dem sichtbaren RAM --
+    # ohne diese Angabe wuerde es mehr als 1 GB beanspruchen, obwohl das
+    # Container-Limit 2 g ist, was die Fairness zerstoert.
+    command: mongod --wiredTigerCacheSizeGB 1
+
+    ports:
+      - "27017:27017"                 # Standardport; erreichbar vom Host fuer mongosh
+                                      # und die Python-Skripte.
+
+    volumes:
+      - mongo_daten:/data/db          # Named Volume: Daten ueberleben docker compose down.
+
+    deploy:
+      resources:
+        limits:
+          memory: 2g                  # Identisches Speicherlimit wie bei postgres.
+          cpus: "4"                   # Identisches CPU-Limit wie bei postgres.
+
+    restart: "no"                     # Wie oben -- kein automatischer Neustart.
+
+# ----------------------------------------------------------------------
+# Named Volumes
+# Docker verwaltet diese Verzeichnisse ausserhalb des Containers.
+# Befehl zum vollstaendigen Loeschen (Daten zuruecksetzen):
+#   docker compose down --volumes
+# oder einzeln -- Compose stellt den Verzeichnisnamen als Praefixname voran:
+#   docker volume rm bachelor-benchmark_postgres_daten bachelor-benchmark_mongo_daten
+# (mit "docker volume ls" den genauen Namen bestaetigen)
+# ----------------------------------------------------------------------
+volumes:
+  postgres_daten:   # Dateiverzeichnis von PostgreSQL (/var/lib/postgresql/data).
+  mongo_daten:      # Dateiverzeichnis von MongoDB (/data/db).

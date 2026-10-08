@@ -1,0 +1,17 @@
+hypothese,sf,kennzahl,teilbedingung,wert_b_ms,wert_c_ms,faktor,befund,erfuellt
+H1,sf1,p95_ms,L1: C schneller als B (Effekt),1.135,0.323,3.5139,"Effekt, C schneller",True
+H1,sf1,p95_ms,L4-Q1: C nicht schneller als B,132.779,73.866,1.7976,"Effekt, C schneller",False
+H1,sf1,p95_ms,L4-Q2: C nicht schneller als B,19.15,21.781,1.1374,"Effekt, B schneller",True
+H1,sf1,p95_ms,Gesamturteil (alle Teilbedingungen),,,,nicht bestätigt,False
+H1,sf2,p95_ms,L1: C schneller als B (Effekt),1.393,0.382,3.6466,"Effekt, C schneller",True
+H1,sf2,p95_ms,L4-Q1: C nicht schneller als B,13710.95,5129.852,2.6728,"Effekt, C schneller",False
+H1,sf2,p95_ms,L4-Q2: C nicht schneller als B,262.317,4789.258,18.2575,"Effekt, B schneller",True
+H1,sf2,p95_ms,Gesamturteil (alle Teilbedingungen),,,,nicht bestätigt,False
+H1,sf1,median_ms,L1: C schneller als B (Effekt),0.856,0.202,4.2376,"Effekt, C schneller",True
+H1,sf1,median_ms,L4-Q1: C nicht schneller als B,123.82,70.923,1.7458,"Effekt, C schneller",False
+H1,sf1,median_ms,L4-Q2: C nicht schneller als B,16.952,19.681,1.161,"Effekt, B schneller",True
+H1,sf1,median_ms,Gesamturteil (alle Teilbedingungen),,,,nicht bestätigt,False
+H1,sf2,median_ms,L1: C schneller als B (Effekt),1.031,0.235,4.3872,"Effekt, C schneller",True
+H1,sf2,median_ms,L4-Q1: C nicht schneller als B,12858.878,4960.855,2.5921,"Effekt, C schneller",False
+H1,sf2,median_ms,L4-Q2: C nicht schneller als B,249.033,4558.493,18.3048,"Effekt, B schneller",True
+H1,sf2,median_ms,Gesamturteil (alle Teilbedingungen),,,,nicht bestätigt,False

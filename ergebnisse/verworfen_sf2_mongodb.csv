@@ -1,0 +1,4 @@
+zeitpunkt,arm,profil,sf,fanout,lauf,clients,dauer_s,operationen,fehler,median_ms,p95_ms,durchsatz_ops,geschrieben_schnitt
+2026-10-02 04:51:04,B,L1,sf2,0,4,4,121.0,221246,8,1.05,1.422,1829.1,0.0
+2026-10-02 04:54:08,B,L1,sf2,0,5,4,121.0,0,16,0,0.0,0.0,0
+2026-10-02 04:57:11,B,L1,sf2,0,5,4,120.9,0,16,0,0.0,0.0,0

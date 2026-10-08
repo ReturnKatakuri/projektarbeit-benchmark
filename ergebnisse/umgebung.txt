@@ -1,0 +1,46 @@
+Messumgebung (Angaben fuer Abschnitt 3.4), erfasst am 2026-09-29 12:42
+
+== Host
+Chip:            Apple M2 Pro
+Arbeitsspeicher: 16 GB
+Betriebssystem:  macOS 14.5 (23F79)
+
+== docker --version
+Docker version 29.8.0, build 88096ef
+Docker Desktop:  Docker Desktop 4.92.0 (240144)
+
+== docker info (Auszug)
+Kernel Version: 7.0.12-linuxkit
+CPUs: 5
+Total Memory: 7.749GiB
+
+== docker exec arm_postgres postgres --version
+postgres (PostgreSQL) 17.11 (Debian 17.11-1.pgdg13+2)
+
+== docker exec arm_mongodb mongod --version (erste zwei Zeilen)
+db version v8.2.12
+Build Info: {
+Image: mongo:8.2 sha256:e0ce8c35124d4a9f9785532d1f268f39e9728ffa1cb38f46fa482436424c4bd3
+
+== python3 --version (.venv)
+Python 3.9.6
+
+== pip list (.venv, Auszug)
+matplotlib          3.9.4
+pandas              2.3.3
+psycopg             3.2.13
+psycopg-binary      3.2.13
+pymongo             4.18.2
+
+== Nachtrag 01.10.2026: Client-Container (Lastgenerator)
+Image benchmark-client aus docker/client/Dockerfile, Container arm_client
+Python 3.9.6
+pymongo 4.18.2
+psycopg 3.2.13
+Basis: Debian GNU/Linux 11 (bullseye)
+Limits: 4 CPUs, 1,5 GB Arbeitsspeicher; Zeitzone Europe/Berlin; Netz bachelor-benchmark_default
+bench.py: je Client ein eigener Prozess (4 Clients = 4 Prozesse)
+Docker-VM am 01.10.2026:
+  Kernel Version: 7.0.12-linuxkit
+  CPUs: 8
+  Total Memory: 6.766GiB (Einstellung in Docker Desktop: 7 GB)

@@ -1,0 +1,7 @@
+sf,arm,daten_kennzahl,daten_bytes,unkomprimiert_kennzahl,unkomprimiert_bytes,indizes_kennzahl,indizes_bytes,gesamt_kennzahl,gesamt_bytes,datenbank_bytes,verhaeltnis_zum_puffer
+sf1,A,pg_table_size,167550976,,,pg_indexes_size,98074624,pg_total_relation_size,265625600,273979059.0,0.247
+sf1,B,storageSize,86544384,dataSize,296239167.0,indexSize,73330688,totalSize,159875072,,0.149
+sf1,C,storageSize,100986880,dataSize,373059599.0,indexSize,20594688,totalSize,121581568,,0.113
+sf2,A,pg_table_size,1952849920,,,pg_indexes_size,1142317056,pg_total_relation_size,3095166976,3103569587.0,2.883
+sf2,B,storageSize,1013600256,dataSize,3459267002.0,indexSize,803983360,totalSize,1817583616,,1.693
+sf2,C,storageSize,1190219776,dataSize,4360318860.0,indexSize,253153280,totalSize,1443373056,,1.344

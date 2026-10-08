@@ -1,0 +1,83 @@
+Speicherbedarf SF1 je Arm, erfasst am 30.09.2026
+
+Zustand: SF1 geladen und sauber (Anzahlen = kennzahlen.json, keine geaenderten
+Anschriften). Alle drei Arme zuletzt von run_all.py aus den Dumps wiederhergestellt
+(pg_restore bzw. mongorestore), also frisch aufgebaute Tabellen und Collections
+ohne Leerraum aus Aenderungen.
+
+Einheiten: MB = 10^6 Bytes, MiB = 2^20 Bytes. pg_size_pretty und du -h zeigen MiB.
+
+Kennzahlen sind je System verschieden und nicht gleichbedeutend:
+  PostgreSQL kennt keine Kompression der Tabellendaten und damit keine
+  Entsprechung zu dataSize/storageSize. Vergleichbar ueber alle drei Arme ist
+  nur der belegte Plattenplatz aus Daten plus Indizes:
+  A: pg_total_relation_size (Summe)   B/C: totalSize = storageSize + indexSize
+
+=== Arm A: PostgreSQL 17.11, Datenbank arm_a ===
+pg_relation_size      Tabellendaten (Hauptdatei, unkomprimiert)
+pg_table_size         Tabellendaten inkl. TOAST, Free Space Map, Visibility Map
+pg_indexes_size       alle Indizes der Tabelle
+pg_total_relation_size = pg_table_size + pg_indexes_size
+pg_database_size      ganze Datenbank inkl. Systemkataloge
+
+  Summe pg_relation_size             167,4 MB       159,6 MiB    167.370.752 Bytes
+  Summe pg_table_size                167,6 MB       159,8 MiB    167.550.976 Bytes
+  Summe pg_indexes_size               98,1 MB        93,5 MiB     98.074.624 Bytes
+  Summe pg_total_relation_size       265,6 MB       253,3 MiB    265.625.600 Bytes
+  pg_database_size                   274,0 MB       261,3 MiB    273.979.059 Bytes
+  je Tabelle (pg_table_size / pg_indexes_size / pg_total_relation_size, Bytes):
+    auftrag              13.402.112    11.550.720    24.952.832
+    auftragsposition    151.977.984    85.852.160   237.830.144
+    kunde                 1.810.432       540.672     2.351.104
+    produkt                 360.448       131.072       491.520
+
+=== Arm B und C: MongoDB 8.2.12, db.stats({scale: 1}) ===
+dataSize      unkomprimierte Groesse der Dokumente (BSON)
+storageSize   belegter Platz der Collections auf der Platte (WiredTiger, komprimiert)
+indexSize     belegter Platz aller Indizes
+totalSize     storageSize + indexSize
+freeStorageSize in beiden Datenbanken 0
+
+arm_b (Arm B, referenziert)
+  dataSize           296,2 MB       282,5 MiB    296.239.167 Bytes
+  storageSize         86,5 MB        82,5 MiB     86.544.384 Bytes
+  indexSize           73,3 MB        69,9 MiB     73.330.688 Bytes
+  totalSize          159,9 MB       152,5 MiB    159.875.072 Bytes
+
+arm_c (Arm C, eingebettet)
+  dataSize           373,1 MB       355,8 MiB    373.059.599 Bytes
+  storageSize        101,0 MB        96,3 MiB    100.986.880 Bytes
+  indexSize           20,6 MB        19,6 MiB     20.594.688 Bytes
+  totalSize          121,6 MB       115,9 MiB    121.581.568 Bytes
+
+  je Collection (size = dataSize, storageSize, totalIndexSize; Bytes):
+    arm_b.auftraege       17.100.000     3.932.160     7.405.568
+    arm_b.positionen     276.213.165    81.788.928    65.609.728
+    arm_b.kunden           2.509.111       655.360       249.856
+    arm_b.produkte           416.891       167.936        65.536
+    arm_c.auftraege      370.133.597   100.163.584    20.279.296
+    arm_c.kunden           2.509.111       655.360       249.856
+    arm_c.produkte           416.891       167.936        65.536
+
+=== Einordnung ===
+Reihenfolge B gegen C:
+  dataSize:    C groesser als B (373,1 gegen 296,2 MB)
+  storageSize: C groesser als B (101,0 gegen 86,5 MB)
+  indexSize:   B groesser als C (73,3 gegen 20,6 MB; B indiziert 2,9 Mio.
+               Positionsdokumente, C nur 300.000 Auftragsdokumente)
+  totalSize:   B groesser als C (159,9 gegen 121,6 MB)
+Die Reihenfolge kehrt sich also nicht durch die Kompression um, sondern erst
+durch die Indizes.
+
+Frueher genannte Werte:
+  261 MB Arm A (29.09.) = pg_database_size in MiB (pg_size_pretty), entspricht 274,0 MB.
+  159 MB / 121 MB arm_b / arm_c (29.09.) = storageSize + indexSize in MB, also totalSize;
+    heute 159,9 / 121,6 MB.
+  283 / 356 (du -sh der Dump-Verzeichnisse, MiB) sind keine Datenbankkennzahlen.
+    Sie liegen nur nahe an dataSize in MiB (282,5 / 355,8), weil mongodump die
+    Dokumente unkomprimiert als BSON schreibt.
+
+Erfasst mit:
+  psql: pg_relation_size, pg_table_size, pg_indexes_size, pg_total_relation_size,
+        pg_database_size
+  mongosh: db.stats({scale: 1, freeStorage: 1}), collStats

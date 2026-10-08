@@ -1,0 +1,13 @@
+gegen_arm,fanout,lesezeiten_aus,gemischt,aendern_c_ms,aendern_x_ms,lesen_x_ms,lesen_c_ms,zaehler_ms,nenner_ms,lesezugriffe_je_aenderung,ergebnis
+B,10,sf1,False,1.212,0.387,0.856,0.202,0.825,0.654,1.2615,"1,26"
+B,100,sf1,False,2.519,0.388,0.856,0.202,2.131,0.654,3.2584,"3,26"
+B,1000,sf1,False,12.336,0.387,0.856,0.202,11.949,0.654,18.2706,"18,27"
+A,10,sf1,False,1.212,0.266,0.129,0.202,0.946,-0.073,,"kein Schwellenwert: C liest nicht schneller als A (Lesezeit A 0,129 ms, C 0,202 ms)"
+A,100,sf1,False,2.519,0.266,0.129,0.202,2.253,-0.073,,"kein Schwellenwert: C liest nicht schneller als A (Lesezeit A 0,129 ms, C 0,202 ms)"
+A,1000,sf1,False,12.336,0.267,0.129,0.202,12.069,-0.073,,"kein Schwellenwert: C liest nicht schneller als A (Lesezeit A 0,129 ms, C 0,202 ms)"
+B,10,sf2,True,1.212,0.387,1.031,0.235,0.825,0.796,1.0364,"1,04"
+B,100,sf2,True,2.519,0.388,1.031,0.235,2.131,0.796,2.6771,"2,68"
+B,1000,sf2,True,12.336,0.387,1.031,0.235,11.949,0.796,15.0113,"15,01"
+A,10,sf2,True,1.212,0.266,0.552,0.235,0.946,0.317,2.9842,"2,98"
+A,100,sf2,True,2.519,0.266,0.552,0.235,2.253,0.317,7.1073,"7,11"
+A,1000,sf2,True,12.336,0.267,0.552,0.235,12.069,0.317,38.0726,"38,07"
